@@ -45,6 +45,9 @@ def extend_notes(notes):
     return notes
 
 def main():
+    print("音の長さ調整処理を開始します。問題なければEnterを押してください。")
+    input()
+
     # MIDIデータの準備
     midi_data_new = pretty_midi.PrettyMIDI()
     new_instrument = pretty_midi.Instrument(0)
@@ -72,6 +75,9 @@ def main():
     # MIDIデータを書き込み
     midi_data_new.write("右手左手伸ばした後(音量変更前).mid")
     old_musicsheet_data.write("右手左手合算しないver(volume_repair_2につっこむ用).mid")
+
+    print("処理が正常に終了しました。Enterを押してください。")
+    input()
 
 if __name__ == "__main__":
     main()

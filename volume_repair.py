@@ -1,88 +1,79 @@
-import  pretty_midi
+import pretty_midi
 
-#新規発行用のmidiリストを作成
+print("音量変更処理を開始します。問題なければEnterを押してください。")
+input()
+
+def adjust_velocity_for_chords(notes, which_hand):
+    # notesのスタート位置をリスト化
+    start_times = [note.start for note in notes]
+    # リスト化したstart位置から、同じstart位置が存在している場合、和音として抽出
+    chords = [[e, start_times.count(e)] for e in set(start_times) if start_times.count(e) > 1]
+
+    # スタートタイムとピッチの情報を持つ辞書を作成
+    note_data = [{"start_time": note.start, "pitch": note.pitch} for note in notes]
+
+    # 和音の情報を辞書に追加
+    for chord in chords:
+        chord.extend([data["pitch"] for data in note_data if data["start_time"] == chord[0]])
+
+    # 和音情報をリストに整理
+    chords_list = [[chord[:2], chord[2:]] for chord in chords]
+
+    # ノートごとの音量調整
+    for note in notes:
+        # 左手の場合、一律で音量を下げる
+        if which_hand == "left":
+            note.velocity -= 5
+
+        # 和音の場合、音の数に応じて音量を下げる
+        for chord_data in chords_list:
+
+            # 右手かつ、最高音の場合は、和音でも音量を下げない。
+            if which_hand == "right" and note.pitch == max(chord_data[1]):
+                pass
+
+            elif chord_data[0][0] == note.start:
+                chord_count = chord_data[0][1]
+                if chord_count == 2:
+                    #左手の場合、2和音でもちょっと多めに下げる。
+                    if which_hand == "left":
+                        note.velocity -= 8
+                    else:
+                        note.velocity -= 5
+                elif chord_count == 3:
+                    note.velocity -= 8
+                elif chord_count == 4:
+                    note.velocity -= 12
+                elif chord_count >= 5:
+                    note.velocity -= 12
+
+        # 低い音域のノートの音量をさらに調整
+        if note.pitch < 36:
+            note.velocity -= 10
+
+        # 調整したノートを楽器に追加
+        instrument.notes.append(note)
+
+# 既存のMIDIデータを読み込む
+midi_data = pretty_midi.PrettyMIDI('右手左手合算しないver(volume_repair_2につっこむ用).mid')
+
+# 右手と左手のノートを取得
+notes_right = midi_data.instruments[0].notes
+notes_left = midi_data.instruments[1].notes
+
+# 新しいMIDIデータの初期化
 midi_data_new = pretty_midi.PrettyMIDI()
-#ピアノの楽器を生成（(0)がmidiのAcoustic Grand Pianoに対応している。数値を変えたら楽器も変わる）
 instrument = pretty_midi.Instrument(0)
 
-#既存のmidiデータを読み込み
-midi_data = pretty_midi.PrettyMIDI('右手左手伸ばした後(音量変更前).mid')
-midi_tracks = midi_data.instruments
-# トラック１のノートを取得
-notes = midi_tracks[0].notes
+# 音量調整の実行
+adjust_velocity_for_chords(notes = notes_right, which_hand = "right")
+adjust_velocity_for_chords(notes = notes_left, which_hand = "left")
 
-#startが同一の値を格納するための空リストを作成
-midi_list = []
-for note in notes:
-    midi_list.append(note.start)
-
-print(midi_list)
-#midi_listの中から、重複がある値の抽出（startの秒数）と、重複している数（和音の数）を抽出している
-#https://www.souya.biz/blog2/pinevillage/2017/09/08/python%E3%81%A7%E3%83%AA%E3%82%B9%E3%83%88%E3%81%AE%E9%87%8D%E8%A4%87%E8%A6%81%E7%B4%A0%E3%82%A2%E3%83%AC%E3%82%B3%E3%83%AC/
-chords = [[e, midi_list.count(e)] for e in set(midi_list) if midi_list.count(e) > 2]
-#②set→重複要素を消している。  ①if→midi_list内の重複している数が1以上の値をリストに追加（この時点で重複のみ取得は済んでいる）
-#内包表記の詳しい記載
-#https://qiita.com/y__sama/items/a2c458de97c4aa5a98e7
-
-#コード配列の中にpitchのデータを入れるため、start_timeとpitchのkeyを持つ辞書を作る。
-note_dic = {}
-pitch_list=[]
-for note in notes:
-    note_dic["start_time"] = note.start
-    note_dic["pitch"] = note.pitch
-    pitch_list.append(note_dic)
-    note_dic = {}
-
-#pitch_listに入ったpitchをchordに入れる。
-for chord in chords:
-    for pitch_num in pitch_list:
-        if pitch_num["start_time"] == chord[0]:
-            chord.append(pitch_num["pitch"])
-#配列を[スタートタイムと和音数][和音のピッチ]に分けて、一つの配列に格納
-chords_list=[]
-for chord in chords:
-    finale=[chord[:2],chord[2:]]
-    chords_list.append(finale)
-
-chord_num = 0
-#全てのnoteに順番に処理をかける。
-for note in notes:
-    print(note)
-    for chord_num in range(len(chords_list)):
-        if chords_list[chord_num][0][0] == note.start:
-            if chords_list[chord_num][0][1] == 3:
-                print("和音の数は3つです")
-                if not note.pitch == max(chords_list[chord_num][1]):
-                    note.velocity -= 5
-            elif chords_list[chord_num][0][1] == 4:
-                print("和音の数は4つです")
-                if not note.pitch == max(chords_list[chord_num][1]):
-                    note.velocity -= 8
-            elif chords_list[chord_num][0][1] == 5:
-                print("和音の数は5つです")
-                if not note.pitch == max(chords_list[chord_num][1]):
-                    note.velocity -= 12
-            elif chords_list[chord_num][0][1] == 6:
-                print("和音の数は6つです")
-                if not note.pitch == max(chords_list[chord_num][1]):
-                    note.velocity -= 15
-            elif chords_list[chord_num][0][1] >= 7:
-                print("和音の数は7つ以上です")
-                if not note.pitch == max(chords_list[chord_num][1]):
-                    note.velocity -= 18
-    #pitch36(36は多分C1)以下の音を一律でベロシティ-10する。
-    if note.pitch <36:
-        note.velocity -= 10
-    #編集したnoteを楽器に格納
-    instrument.notes.append(note)
-
+# 新しいMIDIデータに楽器を追加
 midi_data_new.instruments.append(instrument)
 
-print(str(type(midi_data_new))+"←midi_data_newのクラス")
-print(str(type(midi_data))+"←midi_dataのクラス")
-print(str(type(midi_tracks))+"←midi_tracksのクラス")
-print(str(type(notes))+"←notesのクラス")
-
+# 新しいMIDIファイルとして保存
 midi_data_new.write("音量変更後.mid")
 
-print(len(chords_list))
+print("処理が正常に終了しました。Enterを押してください。")
+input()
