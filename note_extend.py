@@ -1,4 +1,9 @@
-import  pretty_midi
+
+import sys
+print(sys.executable)
+
+print("プログラム開始")
+import pretty_midi
 
 #最初にMIDIファイルのキーを入力させる
 #print("キーを1～11の数値で入力してください")
