@@ -1,9 +1,15 @@
 import glob
 import os
 
-from numpy.lib.function_base import average
+from numpy import average
 
 import pretty_midi
+
+def print_input_file(file_name):
+    print(f"読み込んだファイル: {os.path.abspath(file_name)}")
+
+def print_output_file(file_name):
+    print(f"出力したファイル: {os.path.abspath(file_name)}")
 
 def get_midfile_name(midname):
     """
@@ -107,6 +113,8 @@ if midifile_name is not None:
     newnotes_1, newnotes_2 = diff_note_get()
     midi_data_new = generate_new_midfile()
     midi_data_new.write(midifile_name)
+    print_input_file(midifile_name)
+    print_output_file(midifile_name)
     del midifile_name
 
 #既存midiデータの読み込み
@@ -121,6 +129,8 @@ if midifile_name is not None:
     newnotes_1, newnotes_2 = diff_note_get()
     midi_data_new = generate_new_midfile()
     midi_data_new.write(midifile_name)
+    print_input_file(midifile_name)
+    print_output_file(midifile_name)
     del midifile_name
 
 #既存midiデータの読み込み
@@ -135,4 +145,8 @@ if midifile_name is not None:
     newnotes_1, newnotes_2 = diff_note_get()
     midi_data_new = generate_new_midfile()
     midi_data_new.write(midifile_name)
+    print_input_file(midifile_name)    
+    print_output_file(midifile_name)
     del midifile_name
+
+input()

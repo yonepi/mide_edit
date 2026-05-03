@@ -1,4 +1,12 @@
+import os
+
 import pretty_midi
+
+def print_input_file(file_name):
+    print(f"読み込んだファイル: {os.path.abspath(file_name)}")
+
+def print_output_file(file_name):
+    print(f"出力したファイル: {os.path.abspath(file_name)}")
 
 def extend_notes(notes):
     """
@@ -55,7 +63,9 @@ def main():
     old_musicsheet_data = pretty_midi.PrettyMIDI()
     musicsheet_midi = [pretty_midi.Instrument(0), pretty_midi.Instrument(0)]
 
-    midi_data = pretty_midi.PrettyMIDI('右手左手分けた後.mid')
+    input_file_name = '右手左手分けた後.mid'
+    print_input_file(input_file_name)
+    midi_data = pretty_midi.PrettyMIDI(input_file_name)
     notes_right = midi_data.instruments[0].notes
     notes_left = midi_data.instruments[1].notes
 
@@ -73,8 +83,12 @@ def main():
     old_musicsheet_data.instruments.extend(musicsheet_midi)
 
     # MIDIデータを書き込み
-    midi_data_new.write("右手左手伸ばした後(音量変更前).mid")
-    old_musicsheet_data.write("右手左手合算しないver(volume_repair_2につっこむ用).mid")
+    output_file_name = "右手左手伸ばした後(音量変更前).mid"
+    old_musicsheet_output_file_name = "右手左手合算しないver(volume_repair_2につっこむ用).mid"
+    midi_data_new.write(output_file_name)
+    print_output_file(output_file_name)
+    old_musicsheet_data.write(old_musicsheet_output_file_name)
+    print_output_file(old_musicsheet_output_file_name)
 
     print("処理が正常に終了しました。Enterを押してください。")
     input()
