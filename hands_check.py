@@ -4,6 +4,9 @@ import os
 
 import pretty_midi
 
+def print_input_file(file_name):
+    print(f"読み込んだファイル: {os.path.abspath(file_name)}")
+
 #midファイルの名称取得及び、mid~ファイルの削除を行う関数
 def get_midfile_name(midname):
     folder_path = r"checkfolder\*"
@@ -80,6 +83,7 @@ def hands_subtraction(both_note):
 
 #初級のmidiデータを読み込み
 midifile_name = get_midfile_name("初級.mid")
+print_input_file(midifile_name)
 midi_data = pretty_midi.PrettyMIDI(midifile_name)
 midi_tracks = midi_data.instruments
 # トラック１（右手）、トラック2（左手）のノートを取得
@@ -101,6 +105,7 @@ input()
 
 #中級のmidiデータを読み込み
 midifile_name = get_midfile_name("中級.mid")
+print_input_file(midifile_name)
 midi_data = pretty_midi.PrettyMIDI(midifile_name)
 midi_tracks = midi_data.instruments
 notes_right = midi_tracks[0].notes
@@ -119,6 +124,7 @@ input()
 
 #自由形のmidiデータを読み込み
 midifile_name = get_midfile_name("自由形.mid")
+print_input_file(midifile_name)
 midi_data = pretty_midi.PrettyMIDI(midifile_name)
 midi_tracks = midi_data.instruments
 notes_right = midi_tracks[0].notes
