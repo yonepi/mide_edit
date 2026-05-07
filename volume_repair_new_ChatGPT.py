@@ -18,6 +18,14 @@ input()
 TOL = 0.003  # 3ms 以内を同時発音とみなす
 random.seed(42)
 
+MIDDLE_MELODY_LOW = 52
+MIDDLE_MELODY_HIGH = 64
+
+def middle_melody_adjust(pitch):
+    if MIDDLE_MELODY_LOW <= pitch <= MIDDLE_MELODY_HIGH:
+        return -random.randint(3, 5)
+    return 0
+
 def group_by_onset(notes, tol=TOL):
     # onsetごとに近いノートをまとめる（安定化のため、ソート→スキャン）
     notes_sorted = sorted(notes, key=lambda n: n.start)
@@ -82,6 +90,9 @@ def apply_velocity_rules(notes, which_hand):
                     else:
                         scale = {2:0.90, 3:0.85, 4:0.82}.get(chord_size, 0.80)
                         v *= scale
+
+            if which_hand == "right" and (chord_size == 1 or n is top):
+                v += middle_melody_adjust(n.pitch)
 
             # 音域カーブ
             v += register_curve(n.pitch)

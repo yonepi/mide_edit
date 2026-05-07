@@ -72,6 +72,14 @@ HUMANIZE_RANGE = 2  # ±2
 TOL = 0.003
 random.seed(42)
 
+MIDDLE_MELODY_LOW = 52
+MIDDLE_MELODY_HIGH = 64
+
+def middle_melody_adjust(pitch):
+    if MIDDLE_MELODY_LOW <= pitch <= MIDDLE_MELODY_HIGH:
+        return -random.randint(3, 5)
+    return 0
+
 # ===== ヘルパ =====
 def clamp(v, lo, hi): return max(lo, min(hi, v))
 
@@ -218,6 +226,9 @@ def apply_dynamics_hand(notes, which_hand, pm, beats, downbeats, meter):
             else:
                 if which_hand == "left":
                     v *= (LEFT_BASE_SCALE ** INTENSITY)
+
+            if which_hand == "right" and (chord_size == 1 or n is top):
+                v += middle_melody_adjust(n.pitch)
 
             # 4) 音価：ラテンは短いアタックが多いので、長音だけ少し押し出し
             length = max(0.0, n.end - n.start)

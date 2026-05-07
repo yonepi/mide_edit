@@ -1,12 +1,20 @@
 import os
+import random
 
 import pretty_midi
+
+MIDDLE_MELODY_LOW = 52
+MIDDLE_MELODY_HIGH = 64
 
 def print_input_file(file_name):
     print(f"読み込んだファイル: {os.path.abspath(file_name)}")
 
 def print_output_file(file_name):
     print(f"出力したファイル: {os.path.abspath(file_name)}")
+
+def lower_middle_melody_velocity(note):
+    if MIDDLE_MELODY_LOW <= note.pitch <= MIDDLE_MELODY_HIGH:
+        note.velocity = max(1, note.velocity - random.randint(3, 5))
 
 print("音量変更処理を開始します。問題なければEnterを押してください。")
 input()
@@ -26,6 +34,7 @@ def adjust_velocity_for_chords(notes, which_hand):
 
     # 和音情報をリストに整理
     chords_list = [[chord[:2], chord[2:]] for chord in chords]
+    chord_top_pitch_by_start = {chord_data[0][0]: max(chord_data[1]) for chord_data in chords_list}
 
     # ノートごとの音量調整
     for note in notes:
@@ -58,6 +67,9 @@ def adjust_velocity_for_chords(notes, which_hand):
         # 低い音域のノートの音量をさらに調整
         if note.pitch < 36:
             note.velocity -= 10
+
+        if which_hand == "right" and note.pitch == chord_top_pitch_by_start.get(note.start, note.pitch):
+            lower_middle_melody_velocity(note)
 
         # 調整したノートを楽器に追加
         instrument.notes.append(note)
