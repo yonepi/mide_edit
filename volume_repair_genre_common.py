@@ -132,6 +132,15 @@ def middle_melody_adjust(pitch, preset):
     return 0
 
 
+def chord_adjust(which_hand, chord_size, preset):
+    if chord_size < preset["chord_adjust_min_size"]:
+        return 1.0, 0.0
+
+    factor = preset["chord_factor"] * preset[f"{which_hand}_chord_factor"]
+    delta = preset["chord_delta"] + preset[f"{which_hand}_chord_delta"]
+    return factor, delta
+
+
 def adjust_notes(notes, which_hand, pm, preset):
     random.seed(preset["seed"] + (0 if which_hand == "right" else 1000))
     beats, downbeats = get_timing(pm)
@@ -162,6 +171,9 @@ def adjust_notes(notes, which_hand, pm, preset):
                     else:
                         velocity *= preset["left_inner"].get(chord_size, preset["left_inner_default"])
                     velocity *= preset["left_chord_duck"]
+
+                chord_factor, chord_delta = chord_adjust(which_hand, chord_size, preset)
+                velocity = velocity * chord_factor + chord_delta
             elif which_hand == "right":
                 velocity *= melody_factor(note.pitch, preset)
                 velocity += middle_melody_adjust(note.pitch, preset)
@@ -203,6 +215,7 @@ def write_merged(pm_in, right_notes, left_notes, out_name):
 
 
 def run_volume_repair(preset):
+    preset = apply_interactive_inputs(preset)
     print(f"{preset['label']} 用の音量変更処理を開始します。対象: {MIDI_FILE_NAME}")
     input("Enterで続行: ")
 
@@ -258,12 +271,60 @@ BASE_PRESET = {
     "beat_window": 0.035,
     "offbeat_boost": 0.0,
     "offbeat_window": 0.045,
+    "chord_adjust_min_size": 2,
+    "chord_factor": 1.0,
+    "right_chord_factor": 1.0,
+    "left_chord_factor": 1.0,
+    "chord_delta": 0.0,
+    "right_chord_delta": 0.0,
+    "left_chord_delta": 0.0,
 }
 
 
 def make_preset(**overrides):
     preset = BASE_PRESET.copy()
     preset.update(overrides)
+    return preset
+
+
+def input_number(label, default, low, high, number_type=float):
+    while True:
+        try:
+            raw = input(f"{label}（{low}～{high}、Enterで{default}）: ").strip()
+        except EOFError:
+            return default
+        if raw == "":
+            return default
+        try:
+            value = number_type(raw)
+        except ValueError:
+            print("数値を入力してください。")
+            continue
+        if low <= value <= high:
+            return value
+        print(f"{low}～{high} の範囲で入力してください。")
+
+
+def apply_interactive_inputs(preset):
+    preset = preset.copy()
+
+    print("和音に関わるNoteの音量補正を設定します。")
+    print("100%で変更なし、100%未満で下げる、100%超で上げる設定です。")
+
+    preset["chord_adjust_min_size"] = input_number(
+        "和音として扱う同時発音数",
+        preset["chord_adjust_min_size"],
+        2,
+        8,
+        int,
+    )
+    preset["chord_factor"] = input_number("和音全体の倍率(%)", 100, 50, 150) / 100.0
+    preset["right_chord_factor"] = input_number("右手和音の追加倍率(%)", 100, 50, 150) / 100.0
+    preset["left_chord_factor"] = input_number("左手和音の追加倍率(%)", 100, 50, 150) / 100.0
+    preset["chord_delta"] = input_number("和音全体に加算する音量", 0, -30, 30)
+    preset["right_chord_delta"] = input_number("右手和音に追加で加算する音量", 0, -30, 30)
+    preset["left_chord_delta"] = input_number("左手和音に追加で加算する音量", 0, -30, 30)
+
     return preset
 
 
