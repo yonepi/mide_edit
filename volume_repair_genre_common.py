@@ -132,6 +132,20 @@ def middle_melody_adjust(pitch, preset):
     return 0
 
 
+def smoothstep(edge0, edge1, value):
+    if edge0 == edge1:
+        return 1.0 if value >= edge1 else 0.0
+    x = clamp((value - edge0) / (edge1 - edge0), 0.0, 1.0)
+    return x * x * (3.0 - 2.0 * x)
+
+
+def midrange_adjust(pitch, preset):
+    fade_in = smoothstep(preset["midrange_fade_low"], preset["midrange_core_low"], pitch)
+    fade_out = 1.0 - smoothstep(preset["midrange_core_high"], preset["midrange_fade_high"], pitch)
+    strength = min(fade_in, fade_out)
+    return -preset["midrange_drop"] * strength
+
+
 def chord_adjust(which_hand, chord_size, preset):
     if chord_size < preset["chord_adjust_min_size"]:
         return 1.0, 0.0
@@ -179,6 +193,7 @@ def adjust_notes(notes, which_hand, pm, preset):
                 velocity += middle_melody_adjust(note.pitch, preset)
 
             velocity += pitch_adjust(note.pitch, which_hand, preset)
+            velocity += midrange_adjust(note.pitch, preset)
             if note.end - note.start >= preset["long_threshold"]:
                 velocity += preset["long_boost"]
 
@@ -255,6 +270,11 @@ BASE_PRESET = {
     "middle_melody_high": 64,
     "middle_melody_drop_min": 3,
     "middle_melody_drop_max": 5,
+    "midrange_fade_low": 36,
+    "midrange_core_low": 48,
+    "midrange_core_high": 72,
+    "midrange_fade_high": 84,
+    "midrange_drop": 4.0,
     "very_low": -7.0,
     "low": -3.0,
     "high": 2.0,
