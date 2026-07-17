@@ -146,6 +146,19 @@ def midrange_adjust(pitch, preset):
     return -preset["midrange_drop"] * strength
 
 
+def high_velocity_curve(velocity, preset):
+    if velocity <= preset["velocity_curve_start"]:
+        return velocity
+
+    if velocity <= preset["velocity_cap"]:
+        strength = smoothstep(preset["velocity_curve_start"], preset["velocity_cap"], velocity)
+        return velocity - preset["velocity_near_cap_drop"] * strength
+
+    over = min(velocity - preset["velocity_cap"], preset["velocity_max"] - preset["velocity_cap"])
+    strength = over / (preset["velocity_max"] - preset["velocity_cap"])
+    return preset["velocity_cap"] - preset["velocity_over_cap_drop"] * strength * strength
+
+
 def chord_adjust(which_hand, chord_size, preset):
     if chord_size < preset["chord_adjust_min_size"]:
         return 1.0, 0.0
@@ -177,11 +190,13 @@ def adjust_notes(notes, which_hand, pm, preset):
                         velocity += preset["right_top"]
                         velocity *= melody_factor(note.pitch, preset)
                         velocity += middle_melody_adjust(note.pitch, preset)
+                        velocity = velocity * preset["right_chord_top_factor"] + preset["right_chord_top_delta"]
                     else:
                         velocity *= preset["right_inner"].get(chord_size, preset["right_inner_default"])
                 else:
                     if note is low:
                         velocity += preset["left_low"]
+                        velocity = velocity * preset["left_chord_low_factor"] + preset["left_chord_low_delta"]
                     else:
                         velocity *= preset["left_inner"].get(chord_size, preset["left_inner_default"])
                     velocity *= preset["left_chord_duck"]
@@ -201,6 +216,7 @@ def adjust_notes(notes, which_hand, pm, preset):
             velocity += math.sin(position * math.pi) * preset["phrase_arc"]
             velocity += random.randint(-preset["humanize"], preset["humanize"])
             velocity = preset["center"] + (velocity - preset["center"]) * preset["range_ratio"]
+            velocity = high_velocity_curve(velocity, preset)
             velocity = int(round(clamp(velocity, preset["range_low"], preset["range_high"])))
 
             result.append(
@@ -250,14 +266,18 @@ def run_volume_repair(preset):
 
 BASE_PRESET = {
     "seed": 100,
-    "range_low": 40,
-    "range_high": 112,
+    "range_low": 35,
+    "range_high": 75,
     "center": 66.0,
     "range_ratio": 1.0,
     "right_base": 1.0,
     "left_base": 0.9,
     "right_top": 5.0,
     "left_low": 1.0,
+    "right_chord_top_factor": 0.92,
+    "right_chord_top_delta": -2.0,
+    "left_chord_low_factor": 0.88,
+    "left_chord_low_delta": -3.0,
     "left_chord_duck": 0.9,
     "right_inner": {2: 0.9, 3: 0.85, 4: 0.8},
     "right_inner_default": 0.76,
@@ -298,6 +318,11 @@ BASE_PRESET = {
     "chord_delta": 0.0,
     "right_chord_delta": 0.0,
     "left_chord_delta": 0.0,
+    "velocity_curve_start": 65.0,
+    "velocity_cap": 80.0,
+    "velocity_max": 127.0,
+    "velocity_near_cap_drop": 3.0,
+    "velocity_over_cap_drop": 8.0,
 }
 
 
@@ -353,8 +378,6 @@ PRESETS = {
         label="バラード系",
         out_name="音量変更後_BALLAD_merged.mid",
         seed=110,
-        range_low=30,
-        range_high=116,
         range_ratio=1.05,
         left_base=0.82,
         right_top=9.0,
@@ -372,8 +395,6 @@ PRESETS = {
         label="ロック系",
         out_name="音量変更後_ROCK_merged.mid",
         seed=210,
-        range_low=50,
-        range_high=122,
         center=70.0,
         range_ratio=1.1,
         right_base=1.06,
@@ -393,8 +414,6 @@ PRESETS = {
         label="ジャズ系",
         out_name="音量変更後_JAZZ_merged.mid",
         seed=310,
-        range_low=34,
-        range_high=112,
         center=62.0,
         range_ratio=1.04,
         right_base=0.96,
@@ -415,8 +434,6 @@ PRESETS = {
         label="シティポップ系",
         out_name="音量変更後_CITYPOP_merged.mid",
         seed=410,
-        range_low=54,
-        range_high=108,
         center=68.0,
         range_ratio=0.82,
         right_base=1.06,
@@ -435,8 +452,6 @@ PRESETS = {
         label="渋谷系",
         out_name="音量変更後_SHIBUYAKEI_merged.mid",
         seed=510,
-        range_low=42,
-        range_high=120,
         center=67.0,
         range_ratio=1.12,
         right_base=1.04,
